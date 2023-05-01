@@ -164,7 +164,6 @@ app.post('/loggingin', async (req,res) => {
 	const validationResult = schema.validate(username);
 	if (validationResult.error != null) {
 	   console.log(validationResult.error);
-	   res.redirect("/login");
 	   return;
 	}
 
@@ -173,7 +172,7 @@ app.post('/loggingin', async (req,res) => {
 	console.log(result);
 	if (result.length != 1) {
 		console.log("user not found");
-		res.redirect("/login");
+        res.send("Invalid email/password combination.<br><br><a href=\"/login\">Try again</a>");
 		return;
 	}
 	if (await bcrypt.compare(password, result[0].password)) {
@@ -183,16 +182,6 @@ app.post('/loggingin', async (req,res) => {
 		req.session.cookie.maxAge = expireTime;
 
 		res.redirect('/members');
-		return;
-	}
-	else {
-		console.log("incorrect password");
-        var html =`
-        Invalid email/password combination.<br>
-        <br>
-        <a href="/login">Try again</a>
-        `;
-        res.send(html);
 		return;
 	}
 });
