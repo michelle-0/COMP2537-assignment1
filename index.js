@@ -138,13 +138,11 @@ app.post('/submitUser', async (req,res) => {
 });
 
 app.get ('/members', (req, res) => {
-    if (!req.session.email){
+    if (!req.session.username){
         res.redirect('/');
-        console.log(req.session);
         return;
     }
     var username = req.session.username;
-    console.log(req.session);
 
     var random = Math.floor(Math.random() * 3) + 1;
     res.send(`
