@@ -169,12 +169,12 @@ app.post('/loggingin', async (req,res) => {
 	   console.log(validationResult.error);
 	   return;
 	}
-	const result = await userCollection.find({email: email, password: password}).project({username: 1, email: 1, password: 1, _id: 1}).toArray();
+
+	const result = await userCollection.find({email: email}).project({username: 1, email: 1, password: 1, _id: 1}).toArray();
     
 	console.log(result);
 	if (result.length != 1) {
 		console.log("user not found");
-        res.send("Invalid email/password combination.<br><br><a href=\"/login\">Try again</a>");
 		return;
 	}
     
@@ -187,7 +187,11 @@ app.post('/loggingin', async (req,res) => {
         console.log("username: "+ req.session.username);
 		res.redirect('/members');
 		return;
-	}
+	} else {
+        console.log("incorrect password");
+        res.send("Invalid email/password combination.<br><br><a href=\"/login\">Try again</a>");
+        return;
+    }
 });
 
 app.get('/logout', (req,res) => {
