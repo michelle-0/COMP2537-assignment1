@@ -15,7 +15,7 @@ const Joi = require("joi");
 
 app.use(express.static(__dirname + "/public"));
 
-const expireTime = 24 * 60 * 60 * 1000; //expires after 1 day  (hours * minutes * seconds * millis)
+const expireTime = 60 * 60 * 1000; // expires after 1 hour (minutes * seconds * millis)
 
 /* secret information section */
 const mongodb_host = process.env.MONGODB_HOST;
@@ -59,7 +59,6 @@ app.get('/', (req, res) => {
     return;
     } 
     var username = req.session.username;
-    var random = Math.floor(Math.random() * 3) + 1;
     res.send(`
     <div>
     Hello, ${username}!<br>
@@ -75,7 +74,7 @@ app.get('/', (req, res) => {
     var html = `
     log in
     <form action='/loggingin' method='post' >
-        <input name='username' type='text' placeholder='username'><br>
+        <input name='email' type='email' placeholder='email'><br>
         <input name='password' type='password' placeholder='password'><br>
         <button>Submit</button><br>
     </form>
@@ -120,7 +119,6 @@ app.post('/submitUser', async (req,res) => {
             email: Joi.string().email().required(),
 			password: Joi.string().max(20).required()
 		});
-	
 	const validationResult = schema.validate({username, email, password});
 	if (validationResult.error != null) {
 	   console.log(validationResult.error);
@@ -140,12 +138,14 @@ app.post('/submitUser', async (req,res) => {
 });
 
 app.get ('/members', (req, res) => {
-    if (!req.session.username){
+    if (!req.session.email){
         res.redirect('/');
         console.log(req.session);
         return;
     }
     var username = req.session.username;
+    console.log(req.session);
+
     var random = Math.floor(Math.random() * 3) + 1;
     res.send(`
     <div style="display: block;">
@@ -157,30 +157,36 @@ app.get ('/members', (req, res) => {
 })
 
 app.post('/loggingin', async (req,res) => {
-    var username = req.body.username;
+    var email = req.body.email;
     var password = req.body.password;
+    
+	const schema = Joi.object(
+		{
+            email: Joi.string().email().required(),
+			password: Joi.string().max(20).required()
+		});
+    const validationResult = schema.validate({email, password});
 
-	const schema = Joi.string().max(20).required();
-	const validationResult = schema.validate(username);
 	if (validationResult.error != null) {
 	   console.log(validationResult.error);
 	   return;
 	}
-
-	const result = await userCollection.find({username: username}).project({username: 1, password: 1, _id: 1}).toArray();
-
+	const result = await userCollection.find({email: email}).project({username: 1, email: 1, password: 1, _id: 1}).toArray();
+    
 	console.log(result);
 	if (result.length != 1) {
 		console.log("user not found");
         res.send("Invalid email/password combination.<br><br><a href=\"/login\">Try again</a>");
 		return;
 	}
+    
 	if (await bcrypt.compare(password, result[0].password)) {
 		console.log("correct password");
 		req.session.authenticated = true;
-		req.session.username = username;
+        req.session.username = result[0].username;
+		req.session.email = email;
 		req.session.cookie.maxAge = expireTime;
-
+        console.log("username: "+ req.session.username);
 		res.redirect('/members');
 		return;
 	}
